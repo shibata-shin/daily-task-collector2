@@ -1,0 +1,33 @@
+name: Slack Mention Summary
+
+on:
+  schedule:
+    # 毎日午前9時（日本時間）に実行 (UTCで0時)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  summarize-mentions:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run mention summarizer
+      env:
+        SLACK_USER_TOKEN: ${{ secrets.SLACK_USER_TOKEN }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        SLACK_USER_ID: ${{ secrets.SLACK_USER_ID }}
+      run: |
+        python src/mention_summarizer.py
