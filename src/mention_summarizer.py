@@ -18,7 +18,11 @@ def summarize_mentions(mentions):
         mentions_text += f"リンク: {mention['permalink']}\n"
     
     # Claude APIで要約
-    client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    # GitHub Actions環境でのプロキシ設定を無効化
+    client = Anthropic(
+        api_key=os.environ["ANTHROPIC_API_KEY"],
+        default_headers={"anthropic-version": "2023-06-01"}
+    )
     
     prompt = f"""以下は過去24時間にあなた宛に送られたSlackのメンション一覧です。
 これらのメンションを以下の形式で要約してください：
