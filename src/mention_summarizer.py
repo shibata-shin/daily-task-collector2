@@ -18,7 +18,6 @@ def summarize_mentions(mentions):
         mentions_text += f"内容: {mention['text']}\n"
         mentions_text += f"リンク: {mention['permalink']}\n"
     
-    # Claude APIで要約
     # プロキシを完全に無効化したHTTPクライアントを作成
     http_client = httpx.Client(
         proxies={},  # 空の辞書でプロキシを無効化
@@ -26,12 +25,13 @@ def summarize_mentions(mentions):
     )
     
     try:
+        # Claude APIで要約
         client = Anthropic(
             api_key=os.environ["ANTHROPIC_API_KEY"],
             http_client=http_client
         )
-    
-    prompt = f"""以下は過去24時間にあなた宛に送られたSlackのメンション一覧です。
+        
+        prompt = f"""以下は過去24時間にあなた宛に送られたSlackのメンション一覧です。
 これらのメンションを以下の形式で要約してください：
 
 1. **概要**：全体の傾向や重要なトピックを簡潔に
@@ -42,21 +42,25 @@ def summarize_mentions(mentions):
 {mentions_text}
 
 要約は読みやすく、アクションが必要な項目を明確にしてください。"""
+        
+        message = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=2000,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        summary = message.content[0].text
+        
+        # メンション数を追加
+        header = f"📬 *過去24時間のメンション要約* ({len(mentions)}件)\n\n"
+        
+        return header + summary
     
-    message = client.messages.create(
-        model="claude-sonnet-4-5-20250929",
-        max_tokens=2000,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    
-    summary = message.content[0].text
-    
-    # メンション数を追加
-    header = f"📬 *過去24時間のメンション要約* ({len(mentions)}件)\n\n"
-    
-    return header + summary
+    finally:
+        # HTTPクライアントを閉じる
+        http_client.close()
 
 
 def main():
